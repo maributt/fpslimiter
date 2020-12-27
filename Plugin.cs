@@ -63,11 +63,11 @@ namespace FPSLimiter
             bool isNumber = int.TryParse(arg, out argAsNumber);
             switch (arg.ToLower())
             {
+                case "1/1":
+                case "1/2":
+                case "1/3":
                 case "1/4":
-                case "2/4":
-                case "3/4":
-                case "4/4":
-                    int.TryParse(arg.Split('/')[0], out argAsNumber);
+                    int.TryParse(arg.Split('/')[1], out argAsNumber);
                     break;
                 case "previous":
                     argAsNumber = fc.getCurrentFpsCap();
