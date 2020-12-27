@@ -79,7 +79,7 @@ namespace FPSLimiter
 
         private void helpMessage()
         {
-            this.pi.Framework.Gui.Chat.Print($"Usage: /fps <0..4>\nFPS Limits: (You can also use 1/1..1/4 instead of numbers!)\n   0: None.\n   1: Refresh Rate 1/1\n   2: Refresh Rate 1/2\n   3: Refresh Rate 1/3\n   4: Refresh Rate 1/4\nUsing \"/fps <n>\" two times in a row or \"/fps previous\" will take you back to\nthe fps cap you had before using it the first time. ");
+            this.pi.Framework.Gui.Chat.Print($"Usage: /fps <0..4>\nFPS Limits: (You can also use 1/1..1/4 instead of numbers!)\n   0: None\n   1: Refresh Rate 1/1\n   2: Refresh Rate 1/2\n   3: Refresh Rate 1/3\n   4: Refresh Rate 1/4\nUsing \"/fps <n>\" two times in a row or \"/fps previous\" will take you back to\nthe fps cap you had before using it the first time. ");
         }
 
         public void Dispose()
