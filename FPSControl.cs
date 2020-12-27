@@ -31,7 +31,7 @@ namespace FPSLimiter
             
             switch (n) {
                 case 0:
-                    return "None.";
+                    return "None";
                 case 1:
                 case 2:
                 case 3:

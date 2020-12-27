@@ -36,7 +36,7 @@ namespace FPSLimiter
 
             string[] argument_list = args.Split(' ');
 
-            if (argument_list.Length == 0)
+            if (argument_list.Length == 0 || argument_list[0] == "")
             {
                 helpMessage();
                 return;
@@ -50,15 +50,16 @@ namespace FPSLimiter
                 helpMessage();
                 return;
             }
-
             fc.writeFps(argAsNumber);
             this.pi.Framework.Gui.Chat.Print($"Your FPS cap has been set to: {fc.GetFpsDividerName()}");
+
+            
             
         }
 
         private int processArg(string arg)
         {
-            int argAsNumber;
+            int argAsNumber = -1;
             bool isNumber = int.TryParse(arg, out argAsNumber);
             switch (arg.ToLower())
             {
