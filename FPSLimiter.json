@@ -7,5 +7,5 @@
   "RepoUrl": "https://github.com/maributt/FPS-Limiter",
   "ApplicableVersion": "any",
   "Tags": ["fps", "limiter"],
-  "DalamudApiLevel": 1
+  "DalamudApiLevel": 2
 }
