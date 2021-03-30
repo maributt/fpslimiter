@@ -1,5 +1,5 @@
 <h1 align="center">FPSLimiter</h1>
-<p align="center">A <a href="https://github.com/goatcorp/Dalamud">Dalamud</a> plugin to manage your FPS cap with a command.<br>Type `/fps` in-game to learn more!</p><br>
+<p align="center">A <a href="https://github.com/goatcorp/Dalamud">Dalamud</a> plugin to manage your FPS cap with a command.<br>Type <code>/fps</code> in-game to learn more!</p><br>
 
 <img src="https://user-images.githubusercontent.com/76499752/112993515-95750580-9169-11eb-9df9-58f5309fea19.gif" width="40%" align="right">
 The goal of this plugin is to implement a simple command
