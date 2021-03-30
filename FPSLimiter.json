@@ -1,11 +1,6 @@
-{
-  "Author": "maributt ft. tigerchild",
-  "Name": "FPS Limiter",
-  "Description": "Manage your fps cap with a command and from within macros!\nExample: /fps 2  -> Refresh Rate 1/2",
-  "InternalName": "FPSLimiter",
-  "AssemblyVersion": "0.5",
-  "RepoUrl": "https://github.com/Xyghra/FPS-Limiter",
-  "ApplicableVersion": "any",
-  "Tags": ["fps", "limiter"],
-  "DalamudApiLevel": 2
+﻿{
+  "Name": "FPSLimiter",
+  "Author": "maributt",
+  "Description": "Manage your FPS cap with a command and from within macros!\nSupports refresh rate based caps and custom ones.",
+  "RepoUrl": "https://github.com/maributt/FPS-Limiter"
 }

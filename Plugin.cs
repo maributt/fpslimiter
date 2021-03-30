@@ -1,93 +1,183 @@
-﻿using Dalamud.Game.Command;
+﻿using Dalamud.Game.Chat;
+using Dalamud.Game.Chat.SeStringHandling;
+using Dalamud.Game.Chat.SeStringHandling.Payloads;
 using Dalamud.Plugin;
-using ImGuiScene;
+using FPSLimiter.Attributes;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace FPSLimiter
 {
-    public class Plugin: IDalamudPlugin
+    public class Plugin : IDalamudPlugin
     {
-        public string Name => "FPS Limiter";
+        private PluginCommandManager<Plugin> commandManager;
+        private Stopwatch Timer;
+        private Dalamud.Game.Internal.Gui.ChatGui Chat;
+        private DalamudPluginInterface Interface;
+        private Configuration Config;
 
-        private const string command = "/fps";
+        private int CurrentFpsCap;
+        private int PreviousFpsCap;
+        private IntPtr FpsDividerPtr;
+        private ushort[] ChatCol = new ushort[] { 566, 540 };
 
-        
-        private DalamudPluginInterface pi;
-        private FPSControl fc;
+        private bool Initialized = false;
 
+        private static readonly string IgDividerSig = "48 89 05 ?? ?? ?? ?? EB 07 48 89 3D ?? ?? ?? ?? BA";
+
+        public string Name => "FPSLimiter";
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
-            this.pi = pluginInterface;
-            this.fc = new FPSControl(this.pi);
+            this.Interface = pluginInterface;
+            this.Chat = Interface.Framework.Gui.Chat;
+            this.Timer = new Stopwatch();
 
+            this.Config = (Configuration)Interface.GetPluginConfig() ?? new Configuration();
+            this.Config.Initialize(Interface);
 
-            this.pi.CommandManager.AddHandler(command, new CommandInfo(OnCommand)
+            this.CurrentFpsCap = Config.CurrentFpsCap;
+            this.PreviousFpsCap = Config.PreviousFpsCap;
+
+            var gKernalDevice = this.Interface.TargetModuleScanner.GetStaticAddressFromSig(IgDividerSig);
+            this.FpsDividerPtr = Marshal.ReadIntPtr(gKernalDevice) + 0x13C;
+
+            Interface.Framework.OnUpdateEvent += Update;
+            this.commandManager = new PluginCommandManager<Plugin>(this, Interface);
+
+            this.Initialized = true;
+        }
+        public void Update(Dalamud.Game.Internal.Framework framework)
+        {
+            if (!Initialized || this.CurrentFpsCap <= 4) return;
+            
+            var wantedMS = 1.0f / this.CurrentFpsCap * 1000;
+            Timer.Stop();
+            var elapsedMS = Timer.ElapsedTicks / 10000f;
+            var sleepTime = Math.Max(wantedMS - elapsedMS, 0);
+            Thread.Sleep((int)sleepTime);
+            Timer.Restart();
+        }
+
+        public void DisableCustomCap()
+        {
+            this.CurrentFpsCap = -1;
+            return;
+        }
+
+        public void UpdateCurrentFpsCap(int NewFpsCap)
+        {
+            UpdateCurrentFpsDivider(0);
+            this.CurrentFpsCap = NewFpsCap;
+            PrintFps("Your FPS cap is now set to ", ""+NewFpsCap, ChatCol[0]);
+        }
+
+        public void UpdateCurrentFpsDivider(int NewFpsDivider, bool silent=true)
+        {
+            Marshal.WriteByte(this.FpsDividerPtr, (byte)NewFpsDivider);
+            if (!silent)
             {
-                HelpMessage = "Manage your fps cap with a command and from within macros!\nExample: /fps 2  -> Refresh Rate 1/2"
+                DisableCustomCap();
+                this.CurrentFpsCap = NewFpsDivider;
+                var FpsString = NewFpsDivider == 0 ? "None" : $"Refresh Rate 1/{NewFpsDivider}";
+                PrintFps("Your FPS cap is now set to ", FpsString, ChatCol[1]);
+            }
+        }
+
+        public void PrintFps(string msg, string fps, ushort col=570)
+        {
+            var message = new List<Payload>()
+                {
+                    new TextPayload(msg),
+                    new UIGlowPayload(this.Interface.Data, col),
+                    new TextPayload(fps),
+                    new UIGlowPayload(this.Interface.Data, 0),
+                    new TextPayload(".")
+                };
+            Chat.PrintChat(new XivChatEntry
+            {
+                MessageBytes = new SeString(message).Encode()
             });
         }
 
-        private void OnCommand(string command, string args)
+        [Command("/fps")]
+        [HelpMessage("" +
+                "Usage:   /fps #\n" +
+                " FPS Limits:\n" +
+                "   0:      None\n" +
+                "   1..4:   Refresh Rate 1/1 ... 1/4\n" +
+                "   5..999: Custom FPS caps\n" +
+                " Tip:\n" +
+                "   Using \"/fps #\" two times in a row will toggle\n" +
+                "   between your current and previous FPS cap!")]
+        public void FpsCommand(string command, string arguments)
         {
-
-            string[] argument_list = args.Split(' ');
-
-            if (argument_list.Length == 0 || argument_list[0] == "")
+            var args = arguments.Split(' ');
+            switch (args.Length)
             {
-                helpMessage();
-                return;
-            }
-            
-            string arg = argument_list[0];
-            int argAsNumber = this.processArg(arg);
-
-            if (argAsNumber == -1)
-            {
-                helpMessage();
-                return;
-            }
-            fc.writeFps(argAsNumber);
-            this.pi.Framework.Gui.Chat.Print($"Your FPS cap has been set to: {fc.GetFpsDividerName()}");
-
-            
-            
-        }
-
-        private int processArg(string arg)
-        {
-            int argAsNumber = -1;
-            bool isNumber = int.TryParse(arg, out argAsNumber);
-            switch (arg.ToLower())
-            {
-                case "1/1":
-                case "1/2":
-                case "1/3":
-                case "1/4":
-                    int.TryParse(arg.Split('/')[1], out argAsNumber);
+                case 0:
+                    SyntaxHelp();
                     break;
-                case "previous":
-                    argAsNumber = fc.getCurrentFpsCap();
+                case 1:
+                    if (int.TryParse(args[0], out int NewFpsCap))
+                    {
+                        if (NewFpsCap < 0) return;
+
+                        if (NewFpsCap == this.CurrentFpsCap) NewFpsCap = PreviousFpsCap;
+                        PreviousFpsCap = this.CurrentFpsCap;
+
+                        if (NewFpsCap >= 5)
+                        {
+                            UpdateCurrentFpsCap(NewFpsCap);
+                        } 
+                        else
+                        {
+                            UpdateCurrentFpsDivider(NewFpsCap, false);
+                        }
+                    } else SyntaxHelp();
+                    break;
+                default:
+                    SyntaxHelp();
                     break;
             }
-            return argAsNumber;
-
         }
 
-        private void helpMessage()
+        private void SyntaxHelp()
         {
-            this.pi.Framework.Gui.Chat.Print($"Usage: /fps <0..4>\nFPS Limits: (You can also use 1/1..1/4 instead of numbers!)\n   0: None\n   1: Refresh Rate 1/1\n   2: Refresh Rate 1/2\n   3: Refresh Rate 1/3\n   4: Refresh Rate 1/4\nUsing \"/fps <n>\" two times in a row or \"/fps previous\" will take you back to\nthe fps cap you had before using it the first time. ");
+            Chat.PrintError(
+                "" +
+                "Usage:   /fps #\n" +
+                " FPS Limits:\n" +
+                "   0:      None\n" +
+                "   1..4:   Refresh Rate 1/1 ... 1/4\n" +
+                "   5..999: Custom FPS caps\n" +
+                " Tip:\n" +
+                "   Using \"/fps #\" two times in a row will toggle\n" +
+                "   between your current and previous FPS cap!"
+            );
+        }
+
+        #region IDisposable Support
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing) return;
+
+            Config.CurrentFpsCap = this.CurrentFpsCap;
+            Config.PreviousFpsCap = this.PreviousFpsCap;
+            this.commandManager.Dispose();
+            Interface.Framework.OnUpdateEvent -= Update;
+            this.Interface.SavePluginConfig(this.Config);
+            this.Interface.Dispose();
         }
 
         public void Dispose()
         {
-            this.pi.CommandManager.RemoveHandler(command);
-            this.pi.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
-
-        
+        #endregion
     }
 }

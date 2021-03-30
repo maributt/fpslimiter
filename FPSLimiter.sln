@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.30804.86
+VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FPSLimiter", "FPSLimiter.csproj", "{42FE12F3-26A8-450B-8B72-26D7B9DF6A78}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FPSLimiter", "FPSLimiter.csproj", "{E53E0DC2-06DA-4257-9D3E-B771C3B9273F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{42FE12F3-26A8-450B-8B72-26D7B9DF6A78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42FE12F3-26A8-450B-8B72-26D7B9DF6A78}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42FE12F3-26A8-450B-8B72-26D7B9DF6A78}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42FE12F3-26A8-450B-8B72-26D7B9DF6A78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E53E0DC2-06DA-4257-9D3E-B771C3B9273F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E53E0DC2-06DA-4257-9D3E-B771C3B9273F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E53E0DC2-06DA-4257-9D3E-B771C3B9273F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E53E0DC2-06DA-4257-9D3E-B771C3B9273F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {976AD478-018F-4068-B5FD-8BC98B2D5FA1}
+		SolutionGuid = {03A866E0-1B1E-455A-9141-8AADC2176F3E}
 	EndGlobalSection
 EndGlobal
