@@ -2,5 +2,6 @@
   "Name": "FPSLimiter",
   "Author": "maributt",
   "Description": "Manage your FPS cap with a command and from within macros!\nSupports refresh rate based caps and custom ones.",
-  "RepoUrl": "https://github.com/maributt/FPS-Limiter"
+  "RepoUrl": "https://github.com/maributt/FPS-Limiter",
+  "DalamudApiLevel": 3
 }
