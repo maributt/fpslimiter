@@ -1,183 +1,175 @@
-﻿using Dalamud.Plugin;
-using FPSLimiter.Attributes;
+﻿using Dalamud.Configuration;
+using Dalamud.Game;
+using Dalamud.Game.Command;
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Logging;
+using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
 using System.Threading;
-using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace FPSLimiter
 {
+
+    public class Configuration : IPluginConfiguration
+    {
+        public int Version { get; set; }
+        public int FpsCap = 60;
+        public int FpsCapUnfocused = 5;
+        public int FpsCapPrev = 15;
+
+        [JsonIgnore] private DalamudPluginInterface pluginInterface;
+
+        public void Initialize(DalamudPluginInterface PluginInterface)
+        {
+            pluginInterface = PluginInterface;
+        }
+
+        public void Save()
+        {
+            pluginInterface.SavePluginConfig(this);
+        }
+    }
+
     public class Plugin : IDalamudPlugin
     {
-        private PluginCommandManager<Plugin> commandManager;
-        private Stopwatch Timer;
-        private Dalamud.Game.Internal.Gui.ChatGui Chat;
-        private DalamudPluginInterface Interface;
-        private Configuration Config;
+        public string Name => "FPS Limiter";
+        public string Cmd => "/fps";
 
-        private int CurrentFpsCap;
-        private int PreviousFpsCap;
-        private IntPtr FpsDividerPtr;
-        private ushort[] ChatCol = new ushort[] { 566, 540 };
+        private Stopwatch stopwatch;
+        private Configuration settings;
+        private DalamudPluginInterface pluginInterface;
+        private int fpsCap;
+        private int fpsCapPrev;
+        private int fpsCapUnfocused;
+        public bool Alternate = true;
 
-        private bool Initialized = false;
-
-        private static readonly string IgDividerSig = "48 89 05 ?? ?? ?? ?? EB 07 48 89 3D ?? ?? ?? ?? BA";
-
-        public string Name => "FPSLimiter";
-
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public Plugin(DalamudPluginInterface PluginInterface)
         {
-            this.Interface = pluginInterface;
-            this.Chat = Interface.Framework.Gui.Chat;
-            this.Timer = new Stopwatch();
+            pluginInterface = PluginInterface;
+            pluginInterface.Create<Svc>();
+            settings = (Configuration)pluginInterface.GetPluginConfig() ?? new Configuration();
+            stopwatch = new Stopwatch();
 
-            this.Config = (Configuration)Interface.GetPluginConfig() ?? new Configuration();
-            this.Config.Initialize(Interface);
+            fpsCap = settings.FpsCap;
+            fpsCapPrev = settings.FpsCapPrev;
+            fpsCapUnfocused = settings.FpsCapUnfocused;
 
-            this.CurrentFpsCap = Config.CurrentFpsCap;
-            this.PreviousFpsCap = Config.PreviousFpsCap;
-
-            var gKernalDevice = this.Interface.TargetModuleScanner.GetStaticAddressFromSig(IgDividerSig);
-            this.FpsDividerPtr = Marshal.ReadIntPtr(gKernalDevice) + 0x13C;
-
-            Interface.Framework.OnUpdateEvent += Update;
-            this.commandManager = new PluginCommandManager<Plugin>(this, Interface);
-
-            this.Initialized = true;
-        }
-        public void Update(Dalamud.Game.Internal.Framework framework)
-        {
-            if (!Initialized || this.CurrentFpsCap <= 4) return;
-            
-            var wantedMS = 1.0f / this.CurrentFpsCap * 1000;
-            Timer.Stop();
-            var elapsedMS = Timer.ElapsedTicks / 10000f;
-            var sleepTime = Math.Max(wantedMS - elapsedMS, 0);
-            Thread.Sleep((int)sleepTime);
-            Timer.Restart();
-        }
-
-        public void DisableCustomCap()
-        {
-            this.CurrentFpsCap = -1;
-            return;
-        }
-
-        public void UpdateCurrentFpsCap(int NewFpsCap)
-        {
-            UpdateCurrentFpsDivider(0);
-            this.CurrentFpsCap = NewFpsCap;
-            PrintFps("Your FPS cap is now set to ", ""+NewFpsCap, ChatCol[0]);
-        }
-
-        public void UpdateCurrentFpsDivider(int NewFpsDivider, bool silent=true)
-        {
-            Marshal.WriteByte(this.FpsDividerPtr, (byte)NewFpsDivider);
-            if (!silent)
+            Svc.Commands.AddHandler(Cmd, new CommandInfo(OnCmd)
             {
-                DisableCustomCap();
-                this.CurrentFpsCap = NewFpsDivider;
-                var FpsString = NewFpsDivider == 0 ? "None" : $"Refresh Rate 1/{NewFpsDivider}";
-                PrintFps("Your FPS cap is now set to ", FpsString, ChatCol[1]);
-            }
-        }
-
-        public void PrintFps(string msg, string fps, ushort col=570)
-        {
-            var message = new List<Payload>()
-                {
-                    new TextPayload(msg),
-                    new UIGlowPayload(this.Interface.Data, col),
-                    new TextPayload(fps),
-                    new UIGlowPayload(this.Interface.Data, 0),
-                    new TextPayload(".")
-                };
-            Chat.PrintChat(new XivChatEntry
-            {
-                MessageBytes = new SeString(message).Encode()
+                HelpMessage = "Sets your maximum fps - /fps # [bg|all]",
+                ShowInHelp = true
             });
+            Svc.Framework.Update += OnUpdate;
         }
 
-        [Command("/fps")]
-        [HelpMessage("" +
-                "Usage:   /fps #\n" +
-                " FPS Limits:\n" +
-                "   0:      None\n" +
-                "   1..4:   Refresh Rate 1/1 ... 1/4\n" +
-                "   5..999: Custom FPS caps\n" +
-                " Tip:\n" +
-                "   Using \"/fps #\" two times in a row will toggle\n" +
-                "   between your current and previous FPS cap!")]
-        public void FpsCommand(string command, string arguments)
+        public void OnCmd(string command, string arg)
         {
-            var args = arguments.Split(' ');
-            switch (args.Length)
+            var args = arg.Split(' ');
+            if (args.Length < 1) return;
+            if (!int.TryParse(args[0], out int fpsCapNew)) return;
+            PluginLog.Log($"{args} : "+args.Length);
+            if (args.Length == 2)
             {
-                case 0:
-                    SyntaxHelp();
-                    break;
-                case 1:
-                    if (int.TryParse(args[0], out int NewFpsCap))
+                if (args[1].ToLower() == "bg")
+                {
+                    fpsCapUnfocused = fpsCapNew;
+                    Svc.Chat.PrintChat(new XivChatEntry()
                     {
-                        if (NewFpsCap < 0) return;
-
-                        if (NewFpsCap == this.CurrentFpsCap) NewFpsCap = PreviousFpsCap;
-                        PreviousFpsCap = this.CurrentFpsCap;
-
-                        if (NewFpsCap >= 5)
+                        Message = new SeString(new List<Payload>()
                         {
-                            UpdateCurrentFpsCap(NewFpsCap);
-                        } 
-                        else
+                            new TextPayload("Your background FPS is now capped to "),
+                            new UIGlowPayload((ushort)551),
+                            new TextPayload(fpsCapUnfocused.ToString()),
+                            new UIGlowPayload(0),
+                            new TextPayload(".")
+                        })
+                    });
+                }
+                else if (args[1].ToLower() == "all")
+                {
+                    fpsCapUnfocused = fpsCapNew;
+                    fpsCap = fpsCapNew;
+                    Svc.Chat.PrintChat(new XivChatEntry()
+                    {
+                        Message = new SeString(new List<Payload>()
                         {
-                            UpdateCurrentFpsDivider(NewFpsCap, false);
-                        }
-                    } else SyntaxHelp();
-                    break;
-                default:
-                    SyntaxHelp();
-                    break;
+                            new TextPayload("Your background FPS and FPS are now capped to "),
+                            new UIGlowPayload((ushort)541),
+                            new TextPayload(fpsCapUnfocused.ToString()),
+                            new UIGlowPayload(0),
+                            new TextPayload(".")
+                        })
+                    });
+                }
+                pluginInterface.SavePluginConfig(settings);
+                return;
+            }
+            
+            //PluginLog.Log($"fpsCapNew: {fpsCapNew}, fpsCapPrev: ${fpsCapPrev}, fpsCap: {fpsCap}");
+            if (fpsCapNew == fpsCap)
+            {
+                fpsCapNew = fpsCapPrev;
+                fpsCapPrev = fpsCap;
+            }
+            fpsCap = fpsCapNew;
+
+            Svc.Chat.PrintChat(new XivChatEntry()
+            {
+                Message = new SeString(new List<Payload>()
+                {
+                    new TextPayload("Your FPS is now capped to "),
+                    new UIGlowPayload(Alternate ? (ushort)566 : (ushort)540),
+                    new TextPayload(fpsCap.ToString()),
+                    new UIGlowPayload(0),
+                    new TextPayload(".")
+                })
+            });
+
+            Alternate = !Alternate;
+            settings.FpsCap = fpsCap;
+            settings.FpsCapPrev = fpsCapPrev;
+
+            pluginInterface.SavePluginConfig(settings);
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)] private static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)] private static extern int GetWindowThreadProcessId(IntPtr handle, out int processId);
+        public static bool IsGameFocused
+        {
+            get
+            {
+                var activatedHandle = GetForegroundWindow();
+                if (activatedHandle == IntPtr.Zero)
+                    return false;
+                var procId = Environment.ProcessId;
+                _ = GetWindowThreadProcessId(activatedHandle, out var activeProcId);
+                return activeProcId == procId;
             }
         }
 
-        private void SyntaxHelp()
+        public void OnUpdate(Framework framework)
         {
-            Chat.PrintError(
-                "" +
-                "Usage:   /fps #\n" +
-                " FPS Limits:\n" +
-                "   0:      None\n" +
-                "   1..4:   Refresh Rate 1/1 ... 1/4\n" +
-                "   5..999: Custom FPS caps\n" +
-                " Tip:\n" +
-                "   Using \"/fps #\" two times in a row will toggle\n" +
-                "   between your current and previous FPS cap!"
-            );
-        }
+            //var wantedMs = 1.0f / fpsCap * 1000;
+            stopwatch.Stop();
+            //var elapsedMS = stopwatch.ElapsedTicks / 10000f;
+            //var sleepTime = Math.Max((1.0f / fpsCap * 1000) - (stopwatch.ElapsedTicks / 10000f), 0);
 
-        #region IDisposable Support
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposing) return;
-
-            Config.CurrentFpsCap = this.CurrentFpsCap;
-            Config.PreviousFpsCap = this.PreviousFpsCap;
-            this.commandManager.Dispose();
-            Interface.Framework.OnUpdateEvent -= Update;
-            this.Interface.SavePluginConfig(this.Config);
-            this.Interface.Dispose();
+            Thread.Sleep((int)Math.Max((1.0f / (IsGameFocused ? fpsCap : fpsCapUnfocused) * 1000) - (stopwatch.ElapsedTicks / 10000f), 0));
+            stopwatch.Restart();
         }
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            if (fpsCap < 5) settings.FpsCap = 60;
+            pluginInterface.SavePluginConfig(settings);
+            Svc.Commands.RemoveHandler(Cmd);
+            Svc.Framework.Update -= OnUpdate;
         }
-        #endregion
     }
 }
