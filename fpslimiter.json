@@ -1,0 +1,8 @@
+﻿{
+  "Name": "fps limiter",
+  "Author": "maributt",
+  "Description": "Cap your fps",
+  "RepoUrl": "https://github.com/maributt/FPSLimiter",
+  "Punchline": "",
+  "IconUrl": "https://raw.githubusercontent.com/maributt/xivplugins/main/plugins/fpslimiter/images/icon.png"
+}
