@@ -1,9 +1,5 @@
 ﻿using Dalamud.Game;
-<<<<<<< Updated upstream
 using Dalamud.Game.ClientState;
-=======
-using Dalamud.Game.ClientState;
->>>>>>> Stashed changes
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Text.SeStringHandling;
@@ -16,13 +12,8 @@ namespace FPSLimiter
 	{
 		[PluginService] static internal DalamudPluginInterface PluginInterface { get; private set; }
 		[PluginService] static internal ChatGui Chat { get; private set; }
-<<<<<<< Updated upstream
 		[PluginService] static internal CommandManager Commands { get; private set; }
         [PluginService] static internal ClientState ClientState { get; private set; }
-=======
-		[PluginService] static internal CommandManager Commands { get; private set; }
-        [PluginService] static internal ClientState ClientState { get; private set; }
->>>>>>> Stashed changes
         [PluginService] static internal Framework Framework { get; private set; }
 #pragma warning disable CS0618 // Type or member is obsolete
         [PluginService] static internal SeStringManager SeStringManager { get; private set; }

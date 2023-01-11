@@ -6,11 +6,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-<<<<<<< Updated upstream
-		<TargetFramework>net6.0-windows</TargetFramework>
-=======
 		<TargetFramework>net7.0</TargetFramework>
->>>>>>> Stashed changes
 		<Platforms>x64</Platforms>
 		<LangVersion>latest</LangVersion>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -31,12 +27,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-<<<<<<< Updated upstream
-		<PackageReference Include="DalamudLinter" Version="1.0.3" />
-		<PackageReference Include="DalamudPackager" Version="2.1.8" />
-=======
 		<PackageReference Include="DalamudPackager" Version="2.1.10" />
->>>>>>> Stashed changes
 		<Reference Include="FFXIVClientStructs">
 			<HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
 			<Private>false</Private>
