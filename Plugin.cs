@@ -218,7 +218,7 @@ namespace FPSLimiter
 
         public void OnUpdate(Framework framework)
         {
-            if (!settings.FpsCapEnabled) return;
+            if (!settings.FpsCapEnabled && !settings.FpsCapUnfocusedEnabled) return;
             if (settings.DisableOnLogin && !Svc.ClientState.IsLoggedIn) return;
             if (settings.DisableOnZoning && Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BetweenAreas]) return;
             //var wantedMs = 1.0f / fpsCap * 1000;
