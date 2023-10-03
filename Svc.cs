@@ -6,19 +6,19 @@ using Dalamud.Game.Gui;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using Lumina.Excel.GeneratedSheets;
 
 namespace FPSLimiter
 {
 	class Svc
 	{
 		[PluginService] static internal DalamudPluginInterface PluginInterface { get; private set; }
-		[PluginService] static internal ChatGui Chat { get; private set; }
-		[PluginService] static internal CommandManager Commands { get; private set; }
-        [PluginService] static internal ClientState ClientState { get; private set; }
-        [PluginService] static internal Framework Framework { get; private set; }
-		[PluginService] static internal Condition Condition { get; private set; }
-#pragma warning disable CS0618 // Type or member is obsolete
-        [PluginService] static internal SeStringManager SeStringManager { get; private set; }
-#pragma warning restore CS0618 // Type or member is obsolete
+		[PluginService] static internal IChatGui Chat { get; private set; }
+		[PluginService] static internal ICommandManager Commands { get; private set; }
+        [PluginService] static internal IClientState ClientState { get; private set; }
+        [PluginService] static internal IFramework Framework { get; private set; }
+		[PluginService] static internal ICondition Condition { get; private set; }
 	}
 }

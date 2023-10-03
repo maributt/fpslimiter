@@ -1,5 +1,4 @@
 ﻿using Dalamud.Configuration;
-using Dalamud.Game;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -12,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Threading;
 using ImGuiNET;
+using Dalamud.Plugin.Services;
 
 namespace FPSLimiter
 {
@@ -63,11 +63,13 @@ namespace FPSLimiter
                 HelpMessage = "sets your maximum fps - /fps # [bg|all]",
                 ShowInHelp = true
             });
+            
             Svc.Framework.Update += OnUpdate;
+            
             pluginInterface.UiBuilder.Draw += Draw;
             pluginInterface.UiBuilder.OpenConfigUi += ToggleConfig;
         }
-        
+
         public void ToggleConfig()
         {
             ShowConfig = !ShowConfig;
@@ -97,7 +99,7 @@ namespace FPSLimiter
                 if (settings.FpsCap < 5) settings.FpsCap = 5; // silly idea protection
                 pluginInterface.SavePluginConfig(settings);
             }
-            
+
             if (ImGui.Checkbox("##fpslimiterbgEnabled", ref settings.FpsCapUnfocusedEnabled))
             {
                 pluginInterface.SavePluginConfig(settings);
@@ -135,7 +137,7 @@ namespace FPSLimiter
         {
             var args = arg.Split(' ');
             if (args.Length < 1) return;
-            
+
             if (!int.TryParse(args[0], out int fpsCapNew))
             {
                 ShowConfig = !ShowConfig;
@@ -146,7 +148,7 @@ namespace FPSLimiter
                 if (args[1].ToLower() == "bg")
                 {
                     settings.FpsCapUnfocused = fpsCapNew;
-                    Svc.Chat.PrintChat(new XivChatEntry()
+                    Svc.Chat.Print(new XivChatEntry()
                     {
                         Message = new SeString(new List<Payload>()
                         {
@@ -162,7 +164,7 @@ namespace FPSLimiter
                 {
                     settings.FpsCapUnfocused = fpsCapNew;
                     settings.FpsCap = fpsCapNew;
-                    Svc.Chat.PrintChat(new XivChatEntry()
+                    Svc.Chat.Print(new XivChatEntry()
                     {
                         Message = new SeString(new List<Payload>()
                         {
@@ -177,7 +179,7 @@ namespace FPSLimiter
                 pluginInterface.SavePluginConfig(settings);
                 return;
             }
-            
+
             if (fpsCapNew == settings.FpsCap)
             {
                 fpsCapNew = settings.FpsCapPrev;
@@ -185,7 +187,7 @@ namespace FPSLimiter
             }
             settings.FpsCap = fpsCapNew;
 
-            Svc.Chat.PrintChat(new XivChatEntry()
+            Svc.Chat.Print(new XivChatEntry()
             {
                 Message = new SeString(new List<Payload>()
                 {
@@ -216,7 +218,7 @@ namespace FPSLimiter
             }
         }
 
-        public void OnUpdate(Framework framework)
+        public void OnUpdate(IFramework framework)
         {
             if ((!settings.FpsCapEnabled && IsGameFocused) || (!settings.FpsCapUnfocusedEnabled && !IsGameFocused)) return;
             if (settings.DisableOnLogin && !Svc.ClientState.IsLoggedIn) return;
@@ -227,7 +229,7 @@ namespace FPSLimiter
             //var elapsedMS = stopwatch.ElapsedTicks / 10000f;
             //var sleepTime = Math.Max((1.0f / fpsCap * 1000) - (stopwatch.ElapsedTicks / 10000f), 0);
 
-            Thread.Sleep((int)Math.Max((1.0f / (settings.FpsCapUnfocusedEnabled && !IsGameFocused ? settings.FpsCapUnfocused : settings.FpsCap ) * 1000) - (stopwatch.ElapsedTicks / 10000f), 0));
+            Thread.Sleep((int)Math.Max((1.0f / (settings.FpsCapUnfocusedEnabled && !IsGameFocused ? settings.FpsCapUnfocused : settings.FpsCap) * 1000) - (stopwatch.ElapsedTicks / 10000f), 0));
             stopwatch.Restart();
         }
 
