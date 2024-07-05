@@ -14,7 +14,7 @@ namespace FPSLimiter
 {
 	class Svc
 	{
-		[PluginService] static internal DalamudPluginInterface PluginInterface { get; private set; }
+		[PluginService] static internal IDalamudPluginInterface PluginInterface { get; private set; }
 		[PluginService] static internal IChatGui Chat { get; private set; }
 		[PluginService] static internal ICommandManager Commands { get; private set; }
         [PluginService] static internal IClientState ClientState { get; private set; }

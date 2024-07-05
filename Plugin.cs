@@ -27,9 +27,9 @@ namespace FPSLimiter
         public bool DisableOnLogin = false;
         public bool DisableOnZoning = true;
 
-        [JsonIgnore] private DalamudPluginInterface pluginInterface;
+        [JsonIgnore] private IDalamudPluginInterface pluginInterface;
 
-        public void Initialize(DalamudPluginInterface PluginInterface)
+        public void Initialize(IDalamudPluginInterface PluginInterface)
         {
             pluginInterface = PluginInterface;
         }
@@ -47,11 +47,11 @@ namespace FPSLimiter
 
         private Stopwatch stopwatch;
         private Configuration settings;
-        private DalamudPluginInterface pluginInterface;
+        private IDalamudPluginInterface pluginInterface;
         public bool Alternate = true;
         public bool ShowConfig = false;
 
-        public Plugin(DalamudPluginInterface PluginInterface)
+        public Plugin(IDalamudPluginInterface PluginInterface)
         {
             pluginInterface = PluginInterface;
             pluginInterface.Create<Svc>();
