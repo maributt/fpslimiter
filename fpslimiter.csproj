@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Authors>maributt</Authors>
-		<Version>23.10.3.0</Version>
+		<Version>24.7.7.0</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -10,21 +10,38 @@
 		<Platforms>x64</Platforms>
 		<LangVersion>latest</LangVersion>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+		<ProduceReferenceAssembly>True</ProduceReferenceAssembly>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<NoWarn>CS1591</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Label="Documentation">
 		<DocumentationFile></DocumentationFile>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GenerateDocumentationFile>False</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
 		<AssemblyName>fpslimiter</AssemblyName>
 		<RootNamespace>fpslimiter</RootNamespace>
+		<RepoPath>..\xivplugins\plugins\$(AssemblyName)</RepoPath>
 	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	  <DebugType>portable</DebugType>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+	  <DebugType>portable</DebugType>
+	</PropertyGroup>
+
+	<Target Name="xivrepo" AfterTargets="Build" Condition="Exists($(RepoPath))">
+		<ItemGroup>
+			<FilesToMove Include="$(ProjectDir)$(OutDir)$(AssemblyName)\*.*" />
+		</ItemGroup>
+		<Move SourceFiles="@(FilesToMove)" DestinationFolder="$(ProjectDir)$(RepoPath)" OverwriteReadOnlyFiles="true" />
+		<Message Text="Moving to $(RepoPath)" Importance="high" />
+	</Target>
 
 	<ItemGroup>
 		<PackageReference Include="DalamudPackager" Version="2.1.13" />
