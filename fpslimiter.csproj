@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Authors>maributt</Authors>
-		<Version>24.7.7.0</Version>
+		<Version>24.11.15.1</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -44,7 +44,7 @@
 	</Target>
 
 	<ItemGroup>
-		<PackageReference Include="DalamudPackager" Version="2.1.13" />
+		<PackageReference Include="DalamudPackager" Version="11.0.0" />
 		<Reference Include="FFXIVClientStructs">
 			<HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
 			<Private>false</Private>

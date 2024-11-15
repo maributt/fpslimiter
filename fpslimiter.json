@@ -6,7 +6,6 @@
   "Description": "Cap your fps",
   "ApplicableVersion": "any",
   "RepoUrl": "https://github.com/maributt/FPSLimiter",
-  "DalamudApiLevel": 10,
   "LoadRequiredState": 0,
   "LoadSync": false,
   "CanUnloadAsync": false,
